@@ -21,9 +21,9 @@ public class Planet {
     @Column(length = 500, nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "from", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "from", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Ticket> ticketsFrom = new ArrayList<>();
 
-    @OneToMany(mappedBy = "to", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "to", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Ticket> ticketsTo = new ArrayList<>();
 }

@@ -5,6 +5,7 @@ import app.dao.PlanetDao;
 import app.entity.Planet;
 import app.exception.DaoException;
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,16 +14,15 @@ public class PlanetDaoImpl implements PlanetDao {
 
     @Override
     public Planet create(Planet entity) {
+        Transaction transaction = null;
         try (Session s = HibernateUtils.getInstance().getSessionFactory().openSession()) {
-            s.beginTransaction();
-            try {
-                s.persist(entity);
-                s.getTransaction().commit();
-                return entity;
-            } catch (Exception e) {
-                if (s.getTransaction().isActive()) s.getTransaction().rollback();
-                throw new DaoException("Failed to create Planet", e);
-            }
+            transaction = s.beginTransaction();
+            s.persist(entity);
+            transaction.commit();
+            return entity;
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw new DaoException("Failed to create Planet", e);
         }
     }
 
@@ -46,31 +46,29 @@ public class PlanetDaoImpl implements PlanetDao {
 
     @Override
     public Planet update(Planet entity) {
+        Transaction transaction = null;
         try (Session s = HibernateUtils.getInstance().getSessionFactory().openSession()) {
-            s.beginTransaction();
-            try {
-                Planet merged = s.merge(entity);
-                s.getTransaction().commit();
-                return merged;
-            } catch (Exception e) {
-                if (s.getTransaction().isActive()) s.getTransaction().rollback();
-                throw new DaoException("Failed to update Planet id=" + entity.getId(), e);
-            }
+            transaction = s.beginTransaction();
+            Planet merged = s.merge(entity);
+            transaction.commit();
+            return merged;
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw new DaoException("Failed to update Planet id=" + entity.getId(), e);
         }
     }
 
     @Override
     public void deleteById(String id) {
+        Transaction transaction = null;
         try (Session s = HibernateUtils.getInstance().getSessionFactory().openSession()) {
-            s.beginTransaction();
-            try {
-                Planet found = s.find(Planet.class, id);
-                if (found != null) s.remove(found);
-                s.getTransaction().commit();
-            } catch (Exception e) {
-                if (s.getTransaction().isActive()) s.getTransaction().rollback();
-                throw new DaoException("Failed to delete Planet id=" + id, e);
-            }
+            transaction = s.beginTransaction();
+            Planet found = s.get(Planet.class, id);
+            if (found != null) s.remove(found);
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw new DaoException("Failed to delete Planet id=" + id, e);
         }
     }
 }

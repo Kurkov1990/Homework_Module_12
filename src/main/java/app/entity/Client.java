@@ -19,6 +19,6 @@ public class Client {
     @Column(length = 200, nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Ticket> tickets = new ArrayList<>();
 }

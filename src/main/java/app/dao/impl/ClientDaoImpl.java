@@ -5,6 +5,7 @@ import app.dao.ClientDao;
 import app.entity.Client;
 import app.exception.DaoException;
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,23 +14,22 @@ public class ClientDaoImpl implements ClientDao {
 
     @Override
     public Client create(Client entity) {
+        Transaction transaction = null;
         try (Session s = HibernateUtils.getInstance().getSessionFactory().openSession()) {
-            s.beginTransaction();
-            try {
-                s.persist(entity);
-                s.getTransaction().commit();
-                return entity;
-            } catch (Exception e) {
-                if (s.getTransaction().isActive()) s.getTransaction().rollback();
-                throw new DaoException("Failed to create Client", e);
-            }
+            transaction = s.beginTransaction();
+            s.persist(entity);
+            transaction.commit();
+            return entity;
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw new DaoException("Failed to create Client", e);
         }
     }
 
     @Override
     public Optional<Client> findById(Long id) {
         try (Session s = HibernateUtils.getInstance().getSessionFactory().openSession()) {
-            return Optional.ofNullable(s.find(Client.class, id));
+            return Optional.ofNullable(s.get(Client.class, id));
         } catch (Exception e) {
             throw new DaoException("Failed to find Client by id=" + id, e);
         }
@@ -46,31 +46,29 @@ public class ClientDaoImpl implements ClientDao {
 
     @Override
     public Client update(Client entity) {
+        Transaction transaction = null;
         try (Session s = HibernateUtils.getInstance().getSessionFactory().openSession()) {
-            s.beginTransaction();
-            try {
-                Client merged = s.merge(entity);
-                s.getTransaction().commit();
-                return merged;
-            } catch (Exception e) {
-                if (s.getTransaction().isActive()) s.getTransaction().rollback();
-                throw new DaoException("Failed to update Client id=" + entity.getId(), e);
-            }
+            transaction = s.beginTransaction();
+            Client merged = s.merge(entity);
+            transaction.commit();
+            return merged;
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw new DaoException("Failed to update Client id=" + entity.getId(), e);
         }
     }
 
     @Override
     public void deleteById(Long id) {
+        Transaction transaction = null;
         try (Session s = HibernateUtils.getInstance().getSessionFactory().openSession()) {
-            s.beginTransaction();
-            try {
-                Client found = s.find(Client.class, id);
-                if (found != null) s.remove(found);
-                s.getTransaction().commit();
-            } catch (Exception e) {
-                if (s.getTransaction().isActive()) s.getTransaction().rollback();
-                throw new DaoException("Failed to delete Client id=" + id, e);
-            }
+            transaction = s.beginTransaction();
+            Client found = s.get(Client.class, id);
+            if (found != null) s.remove(found);
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw new DaoException("Failed to delete Client id=" + id, e);
         }
     }
 }
